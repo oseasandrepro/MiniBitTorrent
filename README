@@ -1,0 +1,46 @@
+***Mini - BitTorrent***
+
+Architecture
+------------
+![architecture(./images/Architecture.webp "Architecture Diagram")
+
+Recommended Directory Structure Using DDD
+-------------
+```
+src/
+└── main/
+    └── java/
+        └── org.uerj/
+            ├── application/
+            │   ├── tracker/
+            │   │   ├── TrackerService.java
+            │   │   └── TrackerApplicationService.java
+            │   └── leecher/
+            │       └── LeecherService.java
+            │
+            ├── domain/
+            │   ├── tracker/
+            │   │   ├── Tracker.java (Aggregate Root)
+            │   │   ├── TrackerId.java (Value Object)
+            │   │   ├── TrackerEvent.java
+            │   │   └── TrackerDomainService.java
+            │   └── leecher/
+            │       └── Leecher.java
+            │
+            ├── infrastructure/
+            │   ├── tracker/
+            │   │   ├── TrackerRepositoryImpl.java
+            │   │   └── TrackerHttpClient.java
+            │   └── persistence/
+            │       └── JPAConfig.java
+            │
+            ├── interfaces/
+            │   ├── tracker/
+            │   │   ├── TrackerController.java
+            │   │   └── TrackerDTO.java
+            │   └── leecher/
+            │       └── LeecherController.java
+            │
+            └── Application/
+                └── Main.java
+```
