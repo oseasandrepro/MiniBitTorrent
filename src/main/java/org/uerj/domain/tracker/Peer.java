@@ -1,7 +1,15 @@
 package org.uerj.domain.tracker;
 
-public class Peer {
-    String id;
-    String ipAdress;
-    boolean isSeed;
+import java.io.Serializable;
+
+public class Peer implements Serializable {
+    private String id;
+    private String ipAddress;
+    private boolean isSeed;
+
+    public Peer(String id, String ipAddress) {
+        this.id = id;
+        this.ipAddress = ipAddress;
+        this.isSeed = false;
+    }
 }

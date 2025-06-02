@@ -1,45 +1,65 @@
 package org.uerj.domain.tracker;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.net.InetSocketAddress;
-import java.time.Period;
 import java.util.ArrayList;
-import java.util.UUID;
-import java.util.Random;
-
 import java.util.List;
 
-public class Tracker {
-    List<Peer> connectedPeersList;
-    HttpServer server;
+import org.tinylog.Logger;
 
-    public Tracker(){
+public class Tracker implements HttpHandler {
+    private String ipAddress;
+    private List<Peer> connectedPeersList;
+    private HttpServer server;
+    private final int DEFAULT_HTTP_PORT = 8000;
+    private TrackerService trackerService;
+
+    public Tracker(String ipAddress){
         try {
-            server = HttpServer.create(new InetSocketAddress(8000), 0);
-        }catch (Exception e){
-            System.out.println("Erro: "+e.getMessage());
+            this.ipAddress = ipAddress;
+            server = HttpServer.create(
+                    new InetSocketAddress(this.ipAddress, DEFAULT_HTTP_PORT),10);
+
+            connectedPeersList = new ArrayList<>();
+            trackerService = new TrackerService();
+
+        }
+        catch (Exception exception) {
+            Logger.error("Erro ao criar objeto HttpServer.", exception);
         }
     }
-    private void handleJoinRequest()
-    {
 
-    }
+    @Override
+    public void handle(HttpExchange exchange){
+        String method = exchange.getRequestMethod();
+        String path = exchange.getRequestURI().getPath();
 
-    private List<Peer> genPeerList(){
-        Random random = new Random();
-        List<Peer> peerList = new ArrayList<>();
-        for(int i = 0; i < 5; i++){
-            int randomIndex = random.nextInt(connectedPeersList.size());
-            peerList.add(connectedPeersList.get(randomIndex));
+        String resource = path.split("/")[1];
+        switch (method) {
+            case "GET":
+                if(resource.equals("join")) {
+                    var newPeer = trackerService.handleJoinRequest(exchange,
+                            this.connectedPeersList);
+                    connectedPeersList.add(newPeer);
+                }
+                break;
+            case "POST":
+
+                break;
+            default:
+                trackerService.sendPlainText(exchange, 405,
+                        "{\"error\": \"Método não permitido\"}");
         }
-
-        return peerList;
     }
 
     public void start()
     {
-        server.createContext("/join/{peer_id}", new handleJoinRequest());
+        server.createContext("/join", this);
         server.setExecutor(null);
         server.start();
+        Logger.info("Tracker escutando requisições http na porta {}", DEFAULT_HTTP_PORT);
     }
+
 }
