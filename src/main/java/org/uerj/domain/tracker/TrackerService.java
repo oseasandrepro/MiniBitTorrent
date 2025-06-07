@@ -5,10 +5,12 @@ import org.tinylog.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
+import java.net.Inet4Address;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.net.Inet4Address;
 
 public class TrackerService {
 
@@ -28,29 +30,29 @@ public class TrackerService {
     }
 
     private List<Peer> genPeerList(List<Peer> connectedPeersList) {
-        Random random = new Random();
-        List<Peer> peerList = new ArrayList<>();
-
-        if(connectedPeersList.isEmpty())
-           return peerList;
-
-        for(int i = 0; i < 5; i++) {
-            int randomIndex = random.nextInt(connectedPeersList.size());
-            peerList.add(connectedPeersList.get(randomIndex));
+        try {
+            if (connectedPeersList.isEmpty()) {
+                String trackerIp = Inet4Address.getLocalHost().getHostAddress();
+                return List.of(new Peer(null, trackerIp, true));
+            } else {
+                return connectedPeersList;
+            }
+        } catch (Exception e) {
+            Logger.error("Erro ao criar lista de peers. {}", e);
+            return List.of();
         }
-
-        return peerList;
     }
 
     public Peer handleJoinRequest(HttpExchange exchange, List<Peer> connectedPeersList) {
         String path = exchange.getRequestURI().getPath();
-        // Expected format: /join/{peerId}/{ipAddress}
+        String ip = exchange.getRemoteAddress().getAddress().toString();
+        // Expected format: /join/{ipAddress}
         String[] parts = path.split("/");
 
-        String INVALID_PEER_ID = "INVALID PEER ID";
-        String peerId = parts.length >= 3 ? parts[2] : INVALID_PEER_ID;
+        String INVALID_REQUEST = "INVALID REQUEST";
+        String peerId = parts.length >= 2 ? parts[2] : INVALID_REQUEST;
 
-        if (Objects.equals(peerId, INVALID_PEER_ID))
+        if (Objects.equals(peerId, INVALID_REQUEST))
             return null;
         else {
 
@@ -77,7 +79,7 @@ public class TrackerService {
                 sendPlainText(exchange, 500, exception.getMessage());
                 Logger.error("Erro ao responder requisição de join. ", exception);
             }
-            return new Peer(parts[2], parts[3]);
+            return new Peer(null, parts[2]);
         }
     }
 }

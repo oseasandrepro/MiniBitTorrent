@@ -12,4 +12,10 @@ public class Peer implements Serializable {
         this.ipAddress = ipAddress;
         this.isSeed = false;
     }
+
+    public Peer(String id, String ipAddress, boolean isSeed) {
+        this.id = id;
+        this.ipAddress = ipAddress;
+        this.isSeed = isSeed;
+    }
 }
