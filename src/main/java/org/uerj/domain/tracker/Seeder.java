@@ -12,38 +12,35 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Seeder {
+public class Seeder implements Runnable {
 
     private UUID uuid;
+    private List<String> ipAddresses;
 
-    private final int PORT = 3999;
+    private final int PORT = 4444;
     private final int TIMEOUT_MS = 10000; // 10.000ms = 10s
 
     public final HashMap<String, Block> blocksByID = new HashMap<>();
 
-    public Seeder() {
+    public Seeder(List<String> ipAddresses) {
         this.uuid = UUID.randomUUID();
-        new File("./" + this.uuid).mkdirs();
+        this.ipAddresses = ipAddresses;
+        //new File("./" + this.uuid).mkdirs();
     }
 
-    public void get4RarestBlocks(List<String> ipAddresses) {
+    @Override
+    public void run() {
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             for (String ip : ipAddresses) {
                 executor.submit(() -> {
-                    try (Socket socket = new Socket()) {
+                    try {
+                        Socket socket = new Socket(ip, PORT);
                         Logger.info("Tentando se conectar ao endereço: " + ip);
-                        socket.connect(new InetSocketAddress(ip, PORT), TIMEOUT_MS);
-                        try (OutputStream out = socket.getOutputStream()) {
-                            out.write("GET_BLOCK_IDS".getBytes());
+                        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                             OutputStream out = socket.getOutputStream()) {
+                            out.write("GET_BLOCK_IDS\n".getBytes());
                             out.flush();
 
-                            //block_0:asdahsdiuahsioudhsaioudhsaiuhdia
-                            //block_1:sahuidiuaoshduioahdiusahudisaasd
-                            //block_2:shaidhaihdiahdiahdiahdihadihaid
-                        }
-
-                        try (BufferedReader in = new BufferedReader(
-                                new InputStreamReader(socket.getInputStream()))) {
                             String response = in.readLine();
                             if (response != null) {
                                 Logger.info("Response from " + ip + ": " + response);
@@ -51,10 +48,10 @@ public class Seeder {
                                 Logger.info("No response from " + ip);
                             }
                         }
-
                         Logger.info("Conectado ao endereço: " + ip);
+                        socket.close();
                     } catch (IOException e) {
-                        Logger.error("Erro ao se conectar ao endereço: " + ip + ": " + e.getMessage());
+                        Logger.error("Erro ao se conectar ao endereço: " + ip + " - " + e.getMessage());
                     }
                 });
             }
