@@ -1,8 +1,32 @@
 package org.uerj;
 
+import org.uerj.domain.tracker.PeerServer;
+import org.uerj.domain.tracker.PeerClient;
+import java.util.List;
+import java.util.UUID;
+
 public class Main {
     public static void main(String[] args) {
+        Runnable peerServer = new PeerServer(UUID.randomUUID());
+        Thread serverThread = new Thread(peerServer);
+        serverThread.start();
 
-        System.out.println("Hello, World!");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Runnable peerClient = new PeerClient(List.of("localhost"));
+        Thread clientThread = new Thread(peerClient);
+        clientThread.start();
+
+        // Wait for both threads to finish (optional)
+        try {
+            serverThread.join();
+            clientThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
