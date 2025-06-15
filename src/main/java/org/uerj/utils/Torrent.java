@@ -6,13 +6,14 @@ public class Torrent {
     private final String trackerIp;
     private final String Filename;
     private final int numBlocks;
-    public List<String> blocksToDownload;
+    private List<String> blocksToDownload;
     private List<String> downloadedBlocks;
 
-    Torrent(String trackerIp, String filename, int numBlocks){
+    Torrent(String trackerIp, String filename, int numBlocks, List<String> blocks){
         this.trackerIp = trackerIp;
         this.Filename = filename;
         this.numBlocks = numBlocks;
+        this.blocksToDownload =blocks;
     }
 
     public int getNumBlocks() {

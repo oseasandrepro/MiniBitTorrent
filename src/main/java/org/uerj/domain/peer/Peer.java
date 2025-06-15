@@ -1,16 +1,16 @@
 package org.uerj.domain.peer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.*;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.net.Inet4Address;
+import java.util.stream.Collectors;
 
 import org.tinylog.Logger;
 import org.uerj.domain.tracker.PeerHost;
@@ -39,13 +39,13 @@ public class Peer {
         peerServer = new PeerServer(torrent);
 
         try {
-            peerIp = Inet4Address.getLocalHost().getHostAddress();
+            this.peerIp = Inet4Address.getLocalHost().getHostAddress();
         } catch (Exception e) {
             Logger.error("Erro ao setar ip do peer. {}", e);
         }
     }
 
-    public void getPeers() {
+    public void JoinInTorrentNetWork() {
         HttpClient client = HttpClient.newHttpClient();
         try {
 
@@ -59,6 +59,7 @@ public class Peer {
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             ObjectInputStream ois = new ObjectInputStream(response.body());
+
             @SuppressWarnings("unchecked")
             TrackerJoinResponse trackerJoinResponse = (TrackerJoinResponse) ois.readObject();
 
@@ -76,10 +77,119 @@ public class Peer {
             e.printStackTrace();
         }
     }
-    
-    public void start() {
+
+    private List<String> getBlockListFromPeer(PeerHost peerHost) {
+        List<String> blocks = null;
+        try {
+            Socket socket = new Socket(peerHost.getIpAddress(), peerHost.getGetBlocksIdsPort(), true);
+            InputStream in = socket.getInputStream();
+
+            byte[] buffer = new byte[4096];
+            int bytesRead = in.read(buffer);
+
+            if (bytesRead != -1) {
+                String response = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+                blocks = Arrays.asList(response.split("\\|"));
+            }
+
+        } catch (Exception e) {
+            Logger.error("Erro ao solicitar lista de blocos. {}", e.getMessage());
+            e.printStackTrace();
+        } finally {
+
+            return blocks;
+        }
+
+    }
+
+    private List<String> getfourMostRareBlocks() {
+        Set<String> blocks = new HashSet<>();
+
+        peerList.forEach(it -> {
+            blocks.addAll(getBlockListFromPeer(it));
+        });
+        return blocks.stream()
+                .limit(4)
+                .toList();
+    }
+
+    private List<PeerHost> howHasTheBlock(String blockId) {
+        return peerList.stream()
+                .filter(it -> getBlockListFromPeer(it).contains(blockId))
+                .collect(Collectors.toList());
+    }
+
+    private void downLoadBlock(String blockId) {
+        List<PeerHost> peerHostList = howHasTheBlock(blockId);
+        PeerHost peerHost = null;
+        if (peerHostList.isEmpty())
+            return;
+
+        peerHost = (peerHostList.size() > 5 && peerHostList.getFirst().getIstracker()) ?
+                peerHostList.getLast() : peerHostList.getFirst();
+
+        try {
+            Socket socket = new Socket(peerHost.getIpAddress(), peerHost.getUploadBlockPort());
+            // Send block ID
+            OutputStream out = socket.getOutputStream();
+            byte[] blockIdBytes = blockId.getBytes(StandardCharsets.UTF_8);
+            out.write(blockIdBytes);
+            out.flush();
+            socket.shutdownOutput();  // Signal end of message
+
+            // Receive block data
+            InputStream in = socket.getInputStream();
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+            byte[] data = new byte[256 * 1024];
+            int bytesRead;
+            while ((bytesRead = in.read(data)) != -1) {
+                buffer.write(data, 0, bytesRead);
+            }
+            byte[] blockData = buffer.toByteArray();
+
+            peerService.saveBlockInDisk(blockId, blockData);
+
+        } catch (Exception e) {
+            Logger.error("Erro ao fazer download do bloco. {}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void start() throws InterruptedException {
+        JoinInTorrentNetWork();
+        Thread.sleep(5);
         Thread serverThread = new Thread(this.peerServer);
         serverThread.start();
+
+        Runnable peerRotine = () -> {
+
+            List<String> rareBlocks = null;
+
+            while (true) {
+
+                if (peerList.size() >= 5) {
+                    rareBlocks = getfourMostRareBlocks();
+                    rareBlocks.stream().forEach(it -> {
+                        downLoadBlock(it);
+                    });
+
+                    if (torrent.getBlocksToDownload().isEmpty())
+                        break;
+                } else {
+                    Random rand = new Random();
+                    List<String> blockIds = torrent.getBlocksToDownload();
+                    String blockId = blockIds.get(rand.nextInt(blockIds.size()));
+                    downLoadBlock(blockId);
+                    if (torrent.getBlocksToDownload().isEmpty())
+                        break;
+                }
+            }
+
+            Logger.error("DownLoad completo. ");
+        };
+        Thread peerRotineThread = new Thread(peerRotine);
+        peerRotineThread.start();
     }
 
 }

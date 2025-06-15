@@ -19,5 +19,27 @@ public class PeerHost implements Serializable {
         this.isTracker = isTracker;
         this.uploadBlockPort = uploadBlockPort;
         this.getBlocksIdsPort = getBlocksIdsPort;
+        this.isTracker = false;
+    }
+
+
+    public String getId() {
+        return id.toString();
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public boolean getIstracker(){
+        return isTracker;
+    }
+
+    public int getGetBlocksIdsPort() {
+        return getBlocksIdsPort;
+    }
+
+    public int getUploadBlockPort(){
+        return getBlocksIdsPort;
     }
 }
