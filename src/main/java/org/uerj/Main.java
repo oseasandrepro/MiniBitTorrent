@@ -1,7 +1,7 @@
 package org.uerj;
 
 import org.uerj.domain.tracker.PeerServer;
-import org.uerj.domain.tracker.Seeder;
+import org.uerj.domain.tracker.PeerClient;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,15 +11,14 @@ public class Main {
         Thread serverThread = new Thread(peerServer);
         serverThread.start();
 
-        // Ensure Server A is ready before starting Server B
         try {
-            Thread.sleep(1000);  // Wait briefly for server A to bind to port
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        Runnable clientSeeder = new Seeder(List.of("localhost"));
-        Thread clientThread = new Thread(clientSeeder);
+        Runnable peerClient = new PeerClient(List.of("localhost"));
+        Thread clientThread = new Thread(peerClient);
         clientThread.start();
 
         // Wait for both threads to finish (optional)

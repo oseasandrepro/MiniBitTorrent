@@ -4,7 +4,6 @@ import org.tinylog.Logger;
 import org.uerj.utils.Block;
 
 import java.io.*;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Seeder implements Runnable {
+public class PeerClient implements Runnable {
 
     private UUID uuid;
     private List<String> ipAddresses;
@@ -22,7 +21,7 @@ public class Seeder implements Runnable {
 
     public final HashMap<String, Block> blocksByID = new HashMap<>();
 
-    public Seeder(List<String> ipAddresses) {
+    public PeerClient(List<String> ipAddresses) {
         this.uuid = UUID.randomUUID();
         this.ipAddresses = ipAddresses;
         //new File("./" + this.uuid).mkdirs();
@@ -58,11 +57,5 @@ public class Seeder implements Runnable {
 
             executor.shutdown();
         }
-    }
-
-    public void receiveMessages() {
-        Runnable peerServer = new PeerServer(this.uuid);
-        Thread thread = new Thread(peerServer);
-        thread.start();
     }
 }
