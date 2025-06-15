@@ -1,41 +1,89 @@
 package org.uerj.domain.peer;
 
 import org.tinylog.Logger;
+import org.uerj.utils.Torrent;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 public class PeerServer implements Runnable {
-    public static final int PORT = 4444;
-    private final UUID uuid;
+    private ServerSocket upLoadSocket;
+    private ServerSocket getBlocksSocket;
+    private int upLoadport;
+    private int getBlocksport;
+    private Torrent torrent;
 
-    public PeerServer(UUID uuid) {
-        this.uuid = uuid;
+
+    public PeerServer(Torrent torrent) {
+        this.torrent = torrent;
+        try {
+            upLoadSocket = new ServerSocket(0);
+            getBlocksSocket = new ServerSocket(56599);
+        } catch (Exception e) {
+            Logger.error("Erro ao criar socketServer. {}", e.getMessage());
+            e.printStackTrace();
+        }
+        this.upLoadport = upLoadSocket.getLocalPort();
+        this.getBlocksport = getBlocksSocket.getLocalPort();
     }
 
     @Override
     public void run() {
-        try {
-            ServerSocket serverSocket = new ServerSocket(PORT);
-            Logger.info("Servidor iniciado. Escutando na porta " + PORT);
 
+        Runnable task1 = () -> {
+
+            try {
+                while (true) {
+
+                    Logger.debug("Peer escutando!. fornecendo lista de blocos na porta {}", getBlocksport);
+                    Socket clientSocket = getBlocksSocket.accept();
+                    List<String> blocks = torrent.getDownLoadedBlocks();
+                    String message = String.join("|", blocks);
+                    OutputStream out = clientSocket.getOutputStream();
+                    out.write(message.getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    out.close();
+                }
+
+            } catch (Exception e) {
+                Logger.error("Erro no servidor: " + e.getMessage());
+            }
+        };
+
+        Runnable task2 = () -> {
+            Logger.info("Peer escutando!. Fazendo upload d blocos na porta {}", getUpLoadport());
+        };
+
+        Thread thread1 = new Thread(task1);
+        Thread thread2 = new Thread(task2);
+
+
+        thread1.start();
+        thread2.start();
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+
+            /*ServerSocket serverSocket = new ServerSocket(PORT);
+            Logger.info("Servidor iniciado. Escutando na porta " + PORT);
             Socket clientSocket = serverSocket.accept();
             Logger.info("Cliente conectado: " + clientSocket.getInetAddress());
             handleClient(clientSocket);
             serverSocket.close();
-            clientSocket.close();
-        } catch (IOException e) {
-            Logger.error("Erro no servidor: " + e.getMessage());
-        }
+            clientSocket.close();*/
     }
 
-    private List<String> getAllFileNames() {
+    /*private List<String> getAllFileNames() {
         File fileDirectory = Paths.get("temp_files").toFile();
         return Arrays
                 .stream(Objects.requireNonNull(fileDirectory.listFiles()))
@@ -56,5 +104,13 @@ public class PeerServer implements Runnable {
         } catch (IOException e) {
             Logger.error("Erro na conexão do cliente: ", e.getMessage());
         }
+    }*/
+
+    public int getGetBlocksport() {
+        return getBlocksport;
+    }
+
+    public int getUpLoadport() {
+        return upLoadport;
     }
 }
