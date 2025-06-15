@@ -35,7 +35,7 @@ public class PeerService {
 
     public byte[] loadBlockFromDisk(String blockId){
         try {
-            Path path = Path.of("./"+ Main.processId+"/downloaded/block/"+blockId);
+            Path path = Path.of("./"+ Main.processId+"/downloaded_blocks/"+blockId);
             return Files.readAllBytes(path);
         } catch (Exception e){
             Logger.error("Erro ao caregar bloco do disco. {}", e.getMessage());
@@ -43,6 +43,17 @@ public class PeerService {
 
             return null;
         }
+    }
 
+    public void saveBlockInDisk(String blockId, byte[] data){
+        try {
+            Path path = Path.of("./"+ Main.processId+"/downloaded_blocks/"+blockId);
+            Files.write(path, data);
+
+            System.out.println("File saved successfully.");
+        } catch (Exception e){
+            Logger.error("Erro ao salvar bloco no disco. {}", e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
