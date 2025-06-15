@@ -1,7 +1,7 @@
 package org.uerj;
 
-import org.uerj.domain.tracker.PeerServer;
-import org.uerj.domain.tracker.PeerClient;
+import org.uerj.domain.peer.PeerServer;
+import org.uerj.domain.peer.PeerClient;
 import java.util.List;
 import java.util.UUID;
 
