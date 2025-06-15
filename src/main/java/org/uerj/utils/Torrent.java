@@ -6,7 +6,7 @@ public class Torrent {
     private final String trackerIp;
     private final String Filename;
     private final int numBlocks;
-    public List<String> blocks;
+    public List<String> blocksToDownload;
     private List<String> downloadedBlocks;
 
     Torrent(String trackerIp, String filename, int numBlocks){
@@ -29,10 +29,14 @@ public class Torrent {
 
     public synchronized  void addDownLoadedBlock(String blockId) {
         this.downloadedBlocks.add(blockId);
-        this.blocks.remove(blockId);
+        this.downloadedBlocks.remove(blockId);
     }
 
     public synchronized List<String> getDownLoadedBlocks(){
         return this.downloadedBlocks;
+    }
+
+    public synchronized List<String> getBlocksToDownload() {
+        return blocksToDownload;
     }
 }

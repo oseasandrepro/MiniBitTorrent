@@ -13,13 +13,16 @@ import java.util.List;
 import java.net.Inet4Address;
 
 import org.tinylog.Logger;
+import org.uerj.domain.tracker.PeerHost;
+import org.uerj.domain.tracker.TrackerJoinResponse;
 import org.uerj.utils.Torrent;
 
 import static org.uerj.utils.TorrentUtils.readTorrentFile;
 
 public class Peer {
+    private PeerService peerService;
     PeerServer peerServer;
-    private List<Peer> peerList = new ArrayList<>();
+    private List<PeerHost> peerList = new ArrayList<>();
     private String trackerIp;
     private String peerIp;
     private final int DEFAULT_TRACKER_HTTP_PORT = 8000;
@@ -32,11 +35,13 @@ public class Peer {
 
         this.torrent = readTorrentFile(torrentFilePath);
         this.trackerIp = torrent.getTrackerIp();
+        this.peerService = new PeerService();
         peerServer = new PeerServer(torrent);
+
         try {
             peerIp = Inet4Address.getLocalHost().getHostAddress();
         } catch (Exception e) {
-            Logger.error("Erro ao setar ip do leecher. {}", e);
+            Logger.error("Erro ao setar ip do peer. {}", e);
         }
     }
 
@@ -45,17 +50,23 @@ public class Peer {
         try {
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Content-Type", "application/octet-stream")
-                    .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/join/" + peerIp))
-                    .GET()
+                    .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/join/"))
+                    .POST(HttpRequest.BodyPublishers.ofString(trackerIp + "|" +
+                            this.peerServer.getUpLoadport() + "|" +
+                            this.peerServer.getGetBlocksport()))
                     .build();
 
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             ObjectInputStream ois = new ObjectInputStream(response.body());
             @SuppressWarnings("unchecked")
-            List<Peer> peers = (List<Peer>) ois.readObject();
-            peerList = peers;
+            TrackerJoinResponse trackerJoinResponse = (TrackerJoinResponse) ois.readObject();
+
+            this.peerList = trackerJoinResponse.getAllPeersHosts();
+            peerService.saveBlockListInDisk(trackerJoinResponse.getInitialFileBlocks());
+            trackerJoinResponse.getInitialFileBlocks().forEach(it -> {
+                torrent.addDownLoadedBlock(it.getBlockId());
+            });
 
         } catch (IOException | RuntimeException | InterruptedException | URISyntaxException e) {
             Logger.error("Erro ao fazer requisição para o tracker. {}", e.getMessage());
@@ -65,7 +76,7 @@ public class Peer {
             e.printStackTrace();
         }
     }
-
+    
     public void start() {
         Thread serverThread = new Thread(this.peerServer);
         serverThread.start();

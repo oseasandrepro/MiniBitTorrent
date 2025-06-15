@@ -44,7 +44,7 @@ public class TorrentUtils {
                 blockIds.add(reader.readLine());
             }
             var torrent = new Torrent(trackerIp, filename, numBlocks);
-            torrent.blocks = blockIds;
+            torrent.blocksToDownload = blockIds;
             return torrent;
         } catch (IOException e) {
             Logger.error("Erro ao ler arquivo torrent. {}", e.getMessage());
