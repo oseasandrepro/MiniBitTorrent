@@ -11,7 +11,6 @@ import org.tinylog.Logger;
 
 public class Tracker implements HttpHandler {
     private String ipAddress;
-    private List<PeerHost> connectedPeersList;
     private HttpServer server;
     private final int DEFAULT_HTTP_PORT = 8000;
     private TrackerService trackerService;
@@ -22,7 +21,6 @@ public class Tracker implements HttpHandler {
             server = HttpServer.create(
                     new InetSocketAddress(this.ipAddress, DEFAULT_HTTP_PORT),10);
 
-            connectedPeersList = new ArrayList<>();
             trackerService = new TrackerService();
 
         }
@@ -36,27 +34,40 @@ public class Tracker implements HttpHandler {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        String resource = path.split("/")[1];
-        switch (method) {
-            case "GET":
-                if(resource.equals("join")) {
-                    var newPeer = trackerService.handleJoinRequest(exchange,
-                            this.connectedPeersList);
-                    connectedPeersList.add(newPeer);
-                }
-                break;
-            case "POST":
-
-                break;
-            default:
-                trackerService.sendPlainText(exchange, 405,
-                        "{\"error\": \"Método não permitido\"}");
+        try {
+            String resource = path.split("/")[1];
+            switch (method) {
+                case "GET":
+                    if(resource.equals("peers")) {
+                        trackerService.handleGetPeersRequest(exchange);
+                    }
+                    break;
+                case "POST":
+                    if(resource.equals("join")) {
+                        trackerService.handleJoinRequest(exchange);
+                    }
+                    break;
+                default:
+                    trackerService.sendPlainText(exchange, 405,
+                            "{\"error\": \"Método não permitido\"}");
+            }
+        }
+        catch(Exception exception) {
+            Logger.error("Erro ao executar o trackerService.", exception);
         }
     }
 
     public void start()
     {
+        //cria os diretorios de download blocks e files
+        //acessa o arquivo
+        //quebra o arquivo em blocos
+        //salva os blocos e arquivo completo no diretorio
+        //gera arquivo torrent
+        //inicia o peer do proprio tracker (e o adiciona na lista de peerhost da rede)
+
         server.createContext("/join", this);
+        server.createContext("/peers", this);
         server.setExecutor(null);
         server.start();
         Logger.info("Tracker escutando requisições http na porta {}", DEFAULT_HTTP_PORT);

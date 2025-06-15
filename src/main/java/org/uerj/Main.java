@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import org.uerj.domain.peer.Peer;
 import org.uerj.domain.peer.PeerServer;
 import org.uerj.domain.peer.PeerClient;
+import org.uerj.domain.tracker.Tracker;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,14 +34,14 @@ public class Main {
             e.printStackTrace();
         }
 
-        /*
+
         Tracker tracker = new Tracker("127.0.0.1");
         tracker.start();
-         */
 
 
-        Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
-        peer.start();
+
+        //Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
+        //peer.start();
 
 
         /*Runnable peerServer = new PeerServer(UUID.randomUUID());

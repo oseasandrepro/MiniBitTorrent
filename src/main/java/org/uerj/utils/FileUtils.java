@@ -18,13 +18,13 @@ public class FileUtils {
 
     public static final int BLOCK_SIZE = 256 * 1024; // 256 bytes * 1024 = 256 KB
 
-    public static void splitFile(File file, int maxBlockSize)  {
+    public static void splitFile(File file, int maxBlockSize, String outputDirectory)  {
         int indexCount = 0;
         try (InputStream in = Files.newInputStream(file.toPath())) {
             final byte[] buffer = new byte[maxBlockSize];
             int dataRead = in.read(buffer);
             while (dataRead > -1) {
-                generateFileBlock(buffer, dataRead, indexCount);
+                generateFileBlock(buffer, dataRead, indexCount, outputDirectory);
                 dataRead = in.read(buffer);
                 indexCount++;
             }
@@ -47,14 +47,14 @@ public class FileUtils {
         return hexString.toString();
     }
 
-    private static void generateFileBlock(byte[] buffer, int length, int index) throws IOException {
-        File outFile = File.createTempFile("temp-", "-split", new File(TEMP_DIRECTORY));
+    private static void generateFileBlock(byte[] buffer, int length, int index, String outputDirectory) throws IOException {
+        File outFile = File.createTempFile("temp-", "-split", new File(outputDirectory));
         try(FileOutputStream fos = new FileOutputStream(outFile)) {
             fos.write(buffer, 0, length);
             byte[] byteBlock = Files.readAllBytes(Paths.get(outFile.getAbsolutePath()));
             String fileBlockDigest = generateMessageDigest(byteBlock);
 
-            File fileRename = new File(TEMP_DIRECTORY + index + ":" + fileBlockDigest);
+            File fileRename = new File(outputDirectory + index + ":" + fileBlockDigest);
             boolean successRename = outFile.renameTo(fileRename);
             if(!successRename) {
                 throw new RuntimeException("Aconteceu um erro ao renomear o arquivo.");
@@ -65,8 +65,8 @@ public class FileUtils {
 
     }
 
-    public static void joinFilesFromDirectory(String dir, String fileName) {
-        joinFile(getAllBlocksFromDirectory(dir), OUT_DIRECTORY + fileName);
+    public static void joinFilesFromDirectory(String fileName, String inputDirectory, String outputDirectory) {
+        joinFile(getAllBlocksFromDirectory(inputDirectory), outputDirectory + fileName);
     }
 
     private static List<byte[]> getAllBlocksFromDirectory(String dir) {
