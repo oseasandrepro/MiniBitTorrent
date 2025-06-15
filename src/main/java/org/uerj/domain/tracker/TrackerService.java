@@ -6,11 +6,8 @@ import org.tinylog.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.net.Inet4Address;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
-import java.net.Inet4Address;
 
 public class TrackerService {
 
@@ -29,11 +26,11 @@ public class TrackerService {
         }
     }
 
-    private List<Peer> genPeerList(List<Peer> connectedPeersList) {
+    private List<PeerHost> genPeerList(List<PeerHost> connectedPeersList) {
         try {
             if (connectedPeersList.isEmpty()) {
                 String trackerIp = Inet4Address.getLocalHost().getHostAddress();
-                return List.of(new Peer(null, trackerIp, true));
+                return List.of(new PeerHost(null, trackerIp, true));
             } else {
                 return connectedPeersList;
             }
@@ -43,7 +40,7 @@ public class TrackerService {
         }
     }
 
-    public Peer handleJoinRequest(HttpExchange exchange, List<Peer> connectedPeersList) {
+    public PeerHost handleJoinRequest(HttpExchange exchange, List<PeerHost> connectedPeersList) {
         String path = exchange.getRequestURI().getPath();
         String ip = exchange.getRemoteAddress().getAddress().toString();
         // Expected format: /join/{ipAddress}
@@ -57,13 +54,13 @@ public class TrackerService {
         else {
 
 
-            List<Peer> peerList = genPeerList(connectedPeersList);
+            List<PeerHost> peerHostList = genPeerList(connectedPeersList);
 
             try {
                 int statusCode = 200;
                 ByteArrayOutputStream response = new ByteArrayOutputStream();
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(response);
-                objectOutputStream.writeObject(peerList);
+                objectOutputStream.writeObject(peerHostList);
                 objectOutputStream.flush();
                 objectOutputStream.close();
 
@@ -79,7 +76,7 @@ public class TrackerService {
                 sendPlainText(exchange, 500, exception.getMessage());
                 Logger.error("Erro ao responder requisição de join. ", exception);
             }
-            return new Peer(null, parts[2]);
+            return new PeerHost(null, parts[2]);
         }
     }
 }

@@ -11,7 +11,7 @@ import org.tinylog.Logger;
 
 public class Tracker implements HttpHandler {
     private String ipAddress;
-    private List<Peer> connectedPeersList;
+    private List<PeerHost> connectedPeersList;
     private HttpServer server;
     private final int DEFAULT_HTTP_PORT = 8000;
     private TrackerService trackerService;
