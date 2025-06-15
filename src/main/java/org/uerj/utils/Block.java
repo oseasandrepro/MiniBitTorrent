@@ -1,22 +1,18 @@
 package org.uerj.utils;
 
 public class Block {
-    public String getIP() {
-        return IP;
+    private final String blockId;
+    private final byte[] data;
+
+    public Block (String blockId, byte[] data){
+        this.blockId = blockId;
+        this.data = data;
+    }
+    public String getBlockId() {
+        return blockId;
     }
 
-    public void setIP(String IP) {
-        this.IP = IP;
+    public byte[] getData() {
+        return data;
     }
-
-    public String getBlockHash() {
-        return blockHash;
-    }
-
-    public void setBlockHash(String blockHash) {
-        this.blockHash = blockHash;
-    }
-
-    private String IP;
-    private String blockHash;
 }

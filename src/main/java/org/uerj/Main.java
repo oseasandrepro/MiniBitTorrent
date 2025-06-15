@@ -2,27 +2,39 @@ package org.uerj;
 
 import org.tinylog.Logger;
 
-import java.io.File;
+import org.uerj.utils.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
 import org.uerj.domain.peer.Peer;
 import org.uerj.domain.peer.PeerServer;
 import org.uerj.domain.peer.PeerClient;
-import org.uerj.domain.tracker.Tracker;
 
 import java.util.List;
 import java.util.UUID;
 
+import static org.uerj.utils.FileUtils.splitFile;
+import static org.uerj.utils.TorrentUtils.generateTorrentFile;
+
 public class Main {
-    public static String processId = UUID.randomUUID().toString();
+    //public static String processId = UUID.randomUUID().toString();
+    public static String processId = "8f297ec3-4733-4477-a943-ab749bf57632";
+    public static final String BLOCKS_DIRECTORY = ".//"+Main.processId+"//downloaded_blocks//";
+    public static final String OUT_DIRECTORY = ".//"+ Main.processId+"//downloaded_files//";
 
     public static void main(String[] args) throws InterruptedException {
+
+
         Logger.info("MiniBitTorrent iniciado Id do processo: {}", Main.processId);
-        File downloadedBlocks = new File("downloaded_blocks");
-        File downloadedFiles = new File("downloaded_files");
+        File downloadedBlocks = new File(BLOCKS_DIRECTORY);
+        File downloadedFiles = new File(OUT_DIRECTORY);
+        File processDir = new File(".//"+processId);
         try {
+            if (!processDir.exists())
+                Files.createDirectories(processDir.toPath());
+
             if (!downloadedBlocks.exists())
                 Files.createDirectories(downloadedBlocks.toPath());
 
@@ -35,13 +47,14 @@ public class Main {
         }
 
 
+        /*
         Tracker tracker = new Tracker("127.0.0.1");
         tracker.start();
+         */
 
 
-
-        //Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
-        //peer.start();
+        Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
+        peer.start();
 
 
         /*Runnable peerServer = new PeerServer(UUID.randomUUID());

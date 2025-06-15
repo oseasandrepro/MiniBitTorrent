@@ -7,10 +7,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class PeerServer implements Runnable {
     private ServerSocket upLoadSocket;
@@ -18,12 +15,14 @@ public class PeerServer implements Runnable {
     private int upLoadport;
     private int getBlocksport;
     private Torrent torrent;
+    private PeerService peerService;
 
 
     public PeerServer(Torrent torrent) {
         this.torrent = torrent;
+        this.peerService = new PeerService();
         try {
-            upLoadSocket = new ServerSocket(0);
+            upLoadSocket = new ServerSocket(58514);
             getBlocksSocket = new ServerSocket(56599);
         } catch (Exception e) {
             Logger.error("Erro ao criar socketServer. {}", e.getMessage());
@@ -57,7 +56,29 @@ public class PeerServer implements Runnable {
         };
 
         Runnable task2 = () -> {
-            Logger.info("Peer escutando!. Fazendo upload d blocos na porta {}", getUpLoadport());
+            Logger.info("Peer escutando!. Fazendo upload de blocos na porta {}", getUpLoadport());
+
+            try {
+
+                while (true) {
+                    byte[] receivedMessage = new byte[1024];
+                    Socket clientSocket = upLoadSocket.accept();
+
+                    InputStream in = clientSocket.getInputStream();
+                    in.read(receivedMessage);
+                    String blockId = new String(receivedMessage, StandardCharsets.UTF_8)
+                            .replace("\u0000", "");
+                    byte[] message;
+                    message = peerService.loadBlockFromDisk(blockId);
+                    OutputStream out = clientSocket.getOutputStream();
+                    out.write(message);
+                    out.flush();
+                    out.close();
+                }
+
+            } catch (Exception e) {
+                Logger.error("Erro ao criar socket de upload. {}", e.getMessage());
+            }
         };
 
         Thread thread1 = new Thread(task1);
@@ -73,38 +94,8 @@ public class PeerServer implements Runnable {
             throw new RuntimeException(e);
         }
 
-
-            /*ServerSocket serverSocket = new ServerSocket(PORT);
-            Logger.info("Servidor iniciado. Escutando na porta " + PORT);
-            Socket clientSocket = serverSocket.accept();
-            Logger.info("Cliente conectado: " + clientSocket.getInetAddress());
-            handleClient(clientSocket);
-            serverSocket.close();
-            clientSocket.close();*/
     }
 
-    /*private List<String> getAllFileNames() {
-        File fileDirectory = Paths.get("temp_files").toFile();
-        return Arrays
-                .stream(Objects.requireNonNull(fileDirectory.listFiles()))
-                .map(File::getName)
-                .toList();
-    }
-
-    private void handleClient(Socket clientSocket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-            OutputStream out = clientSocket.getOutputStream();
-            String line = in.readLine();
-            if (line != null && line.equals("GET_BLOCK_IDS")) {
-                List<String> fileNames = getAllFileNames();
-                out.write((String.join("|", fileNames) + "\n").getBytes());
-                out.flush();
-            }
-            out.close();
-        } catch (IOException e) {
-            Logger.error("Erro na conexão do cliente: ", e.getMessage());
-        }
-    }*/
 
     public int getGetBlocksport() {
         return getBlocksport;
