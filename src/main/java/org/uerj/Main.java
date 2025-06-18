@@ -2,6 +2,7 @@ package org.uerj;
 
 import org.tinylog.Logger;
 
+import org.tinylog.configuration.Configuration;
 import org.uerj.domain.tracker.Tracker;
 
 import java.io.File;
@@ -24,6 +25,11 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException, UnknownHostException {
 
+        String logFileName = processId + "/" + processId + ".log";
+
+        // Set the file name before the logger starts
+        Configuration.set("writer", "file");
+        Configuration.set("writer.file", logFileName);
 
         Logger.info("MiniBitTorrent iniciado Id do processo: {}", Main.processId);
         File downloadedBlocks = new File(BLOCKS_DIRECTORY);
