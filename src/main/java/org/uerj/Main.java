@@ -44,10 +44,12 @@ public class Main {
             e.printStackTrace();
         }
 
-        //FileUtils.splitFile(new File("C:\\Users\\oseas\\Downloads\\videoplayback.mp4"), BLOCKS_DIRECTORY);
-        //FileUtils.joinFilesFromDirectory("resultado.mp4",BLOCKS_DIRECTORY, BLOCKS_DIRECTORY);
+        //File file = new File(".\\bloqueio implicito-Part2.mp4");
+        //FileUtils.splitFile(file, BLOCKS_DIRECTORY);
+        //FileUtils.joinFilesFromDirectory(file.getName(),BLOCKS_DIRECTORY, OUT_DIRECTORY);
 
         if (args.length == 2 && args[0].equals("tracker")) {
+            File file = null;
             String trackerIp = Inet4Address.getLocalHost().getHostAddress();
             String filePath = args[1];
 
@@ -55,7 +57,7 @@ public class Main {
             tracker.start(filePath);
             Thread.sleep(2000);
 
-            File file = new File(filePath);
+            file = new File(filePath);
             Peer peer = new Peer(file.getName().replaceFirst("[.][^.]+$", "") + ".torrent",
                     true);
             peer.start();
@@ -65,33 +67,5 @@ public class Main {
             Peer peer = new Peer(torrentFilePath);
             peer.start();
         }
-
-
-        //Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
-        //peer.start();
-
-
-        /*Runnable peerServer = new PeerServer(UUID.randomUUID());
-        Thread serverThread = new Thread(peerServer);
-        serverThread.start();
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        Runnable peerClient = new PeerClient(List.of("localhost"));
-        Thread clientThread = new Thread(peerClient);
-        clientThread.start();
-
-        // Wait for both threads to finish (optional)
-        try {
-            serverThread.join();
-            clientThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-
     }
 }

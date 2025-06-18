@@ -3,14 +3,14 @@ package org.uerj.utils;
 import org.tinylog.Logger;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.*;
 
 import static org.uerj.Main.BLOCKS_DIRECTORY;
 
@@ -52,11 +52,11 @@ public class FileUtils {
         //
         try {
             String fileBlockDigest = generateMessageDigest(buffer);
-            Path path = Paths.get(outputDirectory + "\\" + index + "-" + fileBlockDigest);
+            Path path = Paths.get(outputDirectory + index + "-" + fileBlockDigest);
             if (!Files.exists(path)) {
                 File outFile = Files.createFile(path).toFile();
                 FileOutputStream fileOutputStream = new FileOutputStream(outFile);
-                fileOutputStream.write(buffer);
+                fileOutputStream.write(buffer, 0, length);
             }
 
         } catch (NoSuchAlgorithmException ex) {
@@ -69,10 +69,11 @@ public class FileUtils {
         joinFile(getAllBlocksFromDirectory(inputDirectory), outputDirectory + fileName);
     }
 
+
     private static List<byte[]> getAllBlocksFromDirectory(String dir) {
         return Arrays
                 .stream(Objects.requireNonNull((new File(dir)).listFiles()))
-                .sorted(File::compareTo)
+                .sorted(Comparator.comparingInt(it -> Integer.parseInt(it.getName().split("-")[0])) )
                 .map(block -> {
                     try {
                         return Files.readAllBytes(Paths.get(block.getAbsolutePath()));
@@ -81,7 +82,7 @@ public class FileUtils {
                     }
                     return null;
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static void joinFile(List<byte[]> blocks, String outputFilePath) {
