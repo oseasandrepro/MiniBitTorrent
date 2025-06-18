@@ -4,6 +4,7 @@ import org.tinylog.Logger;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -11,17 +12,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class FileUtils {
-    public static final String TEMP_DIRECTORY = "./temp_files/";
+import static org.uerj.Main.BLOCKS_DIRECTORY;
 
-    public static final String OUT_DIRECTORY = "./out_dir/";
+public class FileUtils {
 
     public static final int BLOCK_SIZE = 256 * 1024; // 256 bytes * 1024 = 256 KB
 
-    public static void splitFile(File file, int maxBlockSize, String outputDirectory)  {
+    public static void splitFile(File file, String outputDirectory)  {
         int indexCount = 0;
         try (InputStream in = Files.newInputStream(file.toPath())) {
-            final byte[] buffer = new byte[maxBlockSize];
+            final byte[] buffer = new byte[BLOCK_SIZE];
             int dataRead = in.read(buffer);
             while (dataRead > -1) {
                 generateFileBlock(buffer, dataRead, indexCount, outputDirectory);
@@ -29,7 +29,8 @@ public class FileUtils {
                 indexCount++;
             }
         } catch (IOException ex) {
-            Logger.error("Erro ao processar arquivo.", ex);
+            Logger.error("Erro ao processar arquivo. {}", ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
@@ -48,17 +49,14 @@ public class FileUtils {
     }
 
     private static void generateFileBlock(byte[] buffer, int length, int index, String outputDirectory) throws IOException {
-        File outFile = File.createTempFile("temp-", "-split", new File(outputDirectory));
-        try(FileOutputStream fos = new FileOutputStream(outFile)) {
-            fos.write(buffer, 0, length);
-            byte[] byteBlock = Files.readAllBytes(Paths.get(outFile.getAbsolutePath()));
-            String fileBlockDigest = generateMessageDigest(byteBlock);
+        //
+        try{
+            String fileBlockDigest = generateMessageDigest(buffer);
+            File outFile = Files.createFile(
+                    Paths.get(outputDirectory+"\\"+index + "-" + fileBlockDigest)).toFile();
+            FileOutputStream fileOutputStream = new FileOutputStream(outFile);
+            fileOutputStream.write(buffer);
 
-            File fileRename = new File(outputDirectory + index + ":" + fileBlockDigest);
-            boolean successRename = outFile.renameTo(fileRename);
-            if(!successRename) {
-                throw new RuntimeException("Aconteceu um erro ao renomear o arquivo.");
-            }
         } catch (NoSuchAlgorithmException ex) {
             Logger.error("O algoritmo selecionado de encriptação não existe.", ex);
         }
