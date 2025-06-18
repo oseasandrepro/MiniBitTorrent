@@ -47,6 +47,6 @@ public class PeerHost implements Serializable {
     }
 
     public int getUploadBlockPort(){
-        return getBlocksIdsPort;
+        return uploadBlockPort;
     }
 }
