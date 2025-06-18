@@ -3,11 +3,17 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.tinylog.Logger;
+import org.uerj.domain.peer.Peer;
+import org.uerj.utils.FileUtils;
+
+import static org.uerj.Main.BLOCKS_DIRECTORY;
+import static org.uerj.utils.TorrentUtils.generateTorrentFile;
 
 public class Tracker implements HttpHandler {
     private String ipAddress;
@@ -59,8 +65,12 @@ public class Tracker implements HttpHandler {
         }
     }
 
-    public void start()
+    public void start(String filePath)
     {
+        File file = new File(filePath);
+        FileUtils.splitFile(file, BLOCKS_DIRECTORY);
+        generateTorrentFile(file.getName(), BLOCKS_DIRECTORY);
+
         //cria os diretorios de download blocks e files
         //acessa o arquivo
         //quebra o arquivo em blocos
@@ -73,6 +83,7 @@ public class Tracker implements HttpHandler {
         server.setExecutor(null);
         server.start();
         Logger.info("Tracker escutando requisições http na porta {}", DEFAULT_HTTP_PORT);
+
     }
 
 }
