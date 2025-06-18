@@ -32,11 +32,27 @@ public class Peer {
     private int getBlocksPort;
     private boolean firstRound = true;
     private boolean canMakeOptmisticUnchok = false;
+    private boolean isTracker = false;
 
     public Peer(String torrentFilePath) {
 
-
         this.torrent = readTorrentFile(torrentFilePath);
+        this.trackerIp = torrent.getTrackerIp();
+        this.peerService = new PeerService();
+        peerServer = new PeerServer(torrent);
+
+        try {
+            this.peerIp = Inet4Address.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            Logger.error("Erro ao setar ip do peer. {}", e);
+        }
+    }
+
+    public Peer(String torrentFilePath, boolean isTracker) {
+        this.isTracker = isTracker;
+        this.torrent = readTorrentFile(torrentFilePath);
+        List<String> list = List.copyOf(torrent.getBlocksToDownload());
+        list.stream().forEach(it -> torrent.addDownLoadedBlock(it));
         this.trackerIp = torrent.getTrackerIp();
         this.peerService = new PeerService();
         peerServer = new PeerServer(torrent);
@@ -52,6 +68,7 @@ public class Peer {
         HttpClient client = HttpClient.newHttpClient();
         try {
 
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/join/"))
                     .header("Content-Type", "application/json")
@@ -60,19 +77,20 @@ public class Peer {
                             this.peerServer.getGetBlocksport()))
                     .build();
 
+            if (!this.isTracker) {
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                ObjectMapper mapper = new ObjectMapper();
 
-            ObjectMapper mapper = new ObjectMapper();
+                @SuppressWarnings("unchecked")
+                TrackerJoinResponse trackerJoinResponse = mapper.readValue(response.body(), TrackerJoinResponse.class);
 
-            @SuppressWarnings("unchecked")
-            TrackerJoinResponse trackerJoinResponse = mapper.readValue(response.body(), TrackerJoinResponse.class);
-
-            this.peerList = trackerJoinResponse.getAllPeersHosts();
-            peerService.saveBlockListInDisk(trackerJoinResponse.getInitialFileBlocks());
-            trackerJoinResponse.getInitialFileBlocks().forEach(it -> {
-                torrent.addDownLoadedBlock(it.getBlockId());
-            });
+                this.peerList = trackerJoinResponse.getAllPeersHosts();
+                peerService.saveBlockListInDisk(trackerJoinResponse.getInitialFileBlocks());
+                trackerJoinResponse.getInitialFileBlocks().forEach(it -> {
+                    torrent.addDownLoadedBlock(it.getBlockId());
+                });
+            }
 
         } catch (IOException | RuntimeException | InterruptedException | URISyntaxException e) {
             Logger.error("Erro ao fazer requisição para o tracker. {}", e.getMessage());
@@ -184,6 +202,14 @@ public class Peer {
     }
 
     public void start() throws InterruptedException {
+
+        if (isTracker) {
+            JoinInTorrentNetWork();
+            Thread serverThread = new Thread(this.peerServer);
+            serverThread.start();
+            return;
+        }
+
         Random rand = new Random();
         JoinInTorrentNetWork();
         Thread.sleep(5);
