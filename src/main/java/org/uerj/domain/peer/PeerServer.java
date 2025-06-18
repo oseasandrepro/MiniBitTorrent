@@ -48,6 +48,7 @@ public class PeerServer implements Runnable {
                     out.write(message.getBytes(StandardCharsets.UTF_8));
                     out.flush();
                     out.close();
+                    Logger.info("Lista de Blocos enviada...");
                 }
 
             } catch (Exception e) {
@@ -74,6 +75,7 @@ public class PeerServer implements Runnable {
                     out.write(message);
                     out.flush();
                     out.close();
+                    Logger.info("Bloco enviado...");
                 }
 
             } catch (Exception e) {

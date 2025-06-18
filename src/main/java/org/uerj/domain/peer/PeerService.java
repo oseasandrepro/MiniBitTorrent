@@ -52,7 +52,7 @@ public class PeerService {
             Path path = Path.of("./" + Main.processId + "/downloaded_blocks/" + blockId);
             Files.write(path, data);
 
-            System.out.println("File saved successfully.");
+            Logger.info("File saved successfully.");
         } catch (Exception e) {
             Logger.error("Erro ao salvar bloco no disco. {}", e.getMessage());
             e.printStackTrace();

@@ -12,11 +12,15 @@ import java.nio.file.Files;
 import java.util.UUID;
 
 import org.uerj.domain.peer.Peer;
+import org.uerj.utils.FileUtils;
+
+import static org.uerj.utils.FileUtils.joinFilesFromDirectory;
 
 public class Main {
     public static String processId = UUID.randomUUID().toString();
-    public static final String BLOCKS_DIRECTORY = ".\\"+Main.processId+"\\downloaded_blocks\\";
-    public static final String OUT_DIRECTORY = ".\\"+ Main.processId+"\\downloaded_files\\";
+    //public static String processId = "e7b727bd-eba8-4f64-954d-581493a9f60c";
+    public static final String BLOCKS_DIRECTORY = ".\\" + Main.processId + "\\downloaded_blocks\\";
+    public static final String OUT_DIRECTORY = ".\\" + Main.processId + "\\downloaded_files\\";
 
     public static void main(String[] args) throws InterruptedException, UnknownHostException {
 
@@ -24,7 +28,7 @@ public class Main {
         Logger.info("MiniBitTorrent iniciado Id do processo: {}", Main.processId);
         File downloadedBlocks = new File(BLOCKS_DIRECTORY);
         File downloadedFiles = new File(OUT_DIRECTORY);
-        File processDir = new File(".//"+processId);
+        File processDir = new File(".\\" + processId);
         try {
             if (!processDir.exists())
                 Files.createDirectories(processDir.toPath());
@@ -40,25 +44,26 @@ public class Main {
             e.printStackTrace();
         }
 
-        //FileUtils.splitFile(new File(OUT_DIRECTORY+"\\file_example_MP3_700KB.mp3"), BLOCKS_DIRECTORY);
+        //FileUtils.splitFile(new File("C:\\Users\\oseas\\Downloads\\videoplayback.mp4"), BLOCKS_DIRECTORY);
+        //FileUtils.joinFilesFromDirectory("resultado.mp4",BLOCKS_DIRECTORY, BLOCKS_DIRECTORY);
 
-        //FileUtils.joinFilesFromDirectory("resultado.mp3",BLOCKS_DIRECTORY, OUT_DIRECTORY);
-
-
-        if( args.length == 1 )
-        {
+        if (args.length == 2 && args[0].equals("tracker")) {
             String trackerIp = Inet4Address.getLocalHost().getHostAddress();
-            String filePath = args[0];
+            String filePath = args[1];
 
             Tracker tracker = new Tracker(trackerIp);
             tracker.start(filePath);
-            Thread.sleep(5000);
+            Thread.sleep(2000);
 
             File file = new File(filePath);
-            Peer peer = new Peer(file.getName().replaceFirst("[.][^.]+$", "")+".torrent",
+            Peer peer = new Peer(file.getName().replaceFirst("[.][^.]+$", "") + ".torrent",
                     true);
             peer.start();
 
+        } else if (args.length == 2 && args[0].equals("peer")) {
+            String torrentFilePath = args[1];
+            Peer peer = new Peer(torrentFilePath);
+            peer.start();
         }
 
 

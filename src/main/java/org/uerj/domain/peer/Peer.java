@@ -12,12 +12,16 @@ import java.util.*;
 import java.net.Inet4Address;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.tinylog.Logger;
 import org.uerj.domain.tracker.PeerHost;
 import org.uerj.domain.tracker.responses.TrackerJoinResponse;
 import org.uerj.utils.Torrent;
 
+import static org.uerj.Main.BLOCKS_DIRECTORY;
+import static org.uerj.Main.OUT_DIRECTORY;
+import static org.uerj.utils.FileUtils.joinFilesFromDirectory;
 import static org.uerj.utils.TorrentUtils.readTorrentFile;
 
 public class Peer {
@@ -77,8 +81,9 @@ public class Peer {
                             this.peerServer.getGetBlocksport()))
                     .build();
 
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
             if (!this.isTracker) {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
                 ObjectMapper mapper = new ObjectMapper();
 
@@ -91,6 +96,7 @@ public class Peer {
                     torrent.addDownLoadedBlock(it.getBlockId());
                 });
             }
+            Logger.info("Entrei na rede Torrent.");
 
         } catch (IOException | RuntimeException | InterruptedException | URISyntaxException e) {
             Logger.error("Erro ao fazer requisição para o tracker. {}", e.getMessage());
@@ -104,7 +110,7 @@ public class Peer {
         try {
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/peer/"))
+                    .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/peers"))
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();
@@ -113,7 +119,9 @@ public class Peer {
 
             ObjectMapper mapper = new ObjectMapper();
 
-            peerHostList = (List<PeerHost>) mapper.readValue(response.body(), List.class);
+            peerHostList = mapper.readValue(response.body(),
+                    new TypeReference<List<PeerHost>>(){}
+            );
 
         } catch (IOException | RuntimeException | InterruptedException | URISyntaxException e) {
             Logger.error("Erro ao fazer requisição para o tracker. {}", e.getMessage());
@@ -194,6 +202,7 @@ public class Peer {
             byte[] blockData = buffer.toByteArray();
 
             peerService.saveBlockInDisk(blockId, blockData);
+            Logger.info("bloco [{}] baixado do peer [{}]", blockId, peerHost.id);
 
         } catch (Exception e) {
             Logger.error("Erro ao fazer download do bloco. {}", e.getMessage());
@@ -221,11 +230,17 @@ public class Peer {
             List<String> rareBlocks = null;
 
             while (true) {
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 //Rarest first if I can
                 if (firstRound && peerList.size() == 4) {
                     rareBlocks = getfourMostRareBlocks();
                     rareBlocks.stream().forEach(it -> {
                         downLoadBlock(it);
+                        torrent.addDownLoadedBlock(it);
                     });
                     if (torrent.getBlocksToDownload().isEmpty())
                         break;
@@ -238,12 +253,20 @@ public class Peer {
                     List<String> blockIds = torrent.getBlocksToDownload();
                     String blockId = blockIds.get(rand.nextInt(blockIds.size()));
                     downLoadBlock(blockId);
+                    torrent.addDownLoadedBlock(blockId);
                     if (torrent.getBlocksToDownload().isEmpty())
                         break;
 
                     //Add peers
                     if (peerList.size() < 4) {
-                        List<PeerHost> list = geetPeerListFromTracker();
+                        List<PeerHost> list = geetPeerListFromTracker()
+                                .stream()
+                                .filter(it ->
+                                        it.getBlocksIdsPort != peerServer.getGetBlocksport() &&
+                                        it.getUploadBlockPort() != peerServer.getGetBlocksport())
+                                .toList();
+
+
                         if (list.size() > 1) {
                             for (int i = 0; i < (4 - peerList.size()); i++) {
                                 PeerHost peerHost = list.get(rand.nextInt(list.size()));
@@ -254,6 +277,8 @@ public class Peer {
                     }
                 }
             }
+
+            joinFilesFromDirectory(torrent.getFilename(),BLOCKS_DIRECTORY, OUT_DIRECTORY);
             Logger.info("DownLoad completo. ");
         };
         Thread peerRotineThread = new Thread(downLoadRoutine);
