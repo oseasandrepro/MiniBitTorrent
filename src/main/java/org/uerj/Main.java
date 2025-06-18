@@ -2,6 +2,7 @@ package org.uerj;
 
 import org.tinylog.Logger;
 
+import org.uerj.domain.tracker.Tracker;
 import org.uerj.utils.FileUtils;
 
 import java.io.File;
@@ -50,14 +51,14 @@ public class Main {
 
         //FileUtils.joinFilesFromDirectory("resultado.mp3",BLOCKS_DIRECTORY, OUT_DIRECTORY);
 
-        /*
-        Tracker tracker = new Tracker("127.0.0.1");
+
+        Tracker tracker = new Tracker("192.168.0.51");
         tracker.start();
-         */
 
+        Thread.sleep(5000);
 
-        //Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
-        //peer.start();
+        Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
+        peer.start();
 
 
         /*Runnable peerServer = new PeerServer(UUID.randomUUID());

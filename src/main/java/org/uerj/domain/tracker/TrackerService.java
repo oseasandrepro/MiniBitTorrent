@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import org.tinylog.Logger;
 import org.uerj.domain.tracker.responses.TrackerJoinResponse;
+import org.uerj.utils.Block;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -65,7 +67,7 @@ public class TrackerService {
 
             var response = new TrackerJoinResponse();
             response.allPeersHosts = new ArrayList<PeerHost>(connectedPeersHosts);
-            response.initialBlocks = new ArrayList<FileBlock>();
+            response.initialBlocks = new ArrayList<Block>();
 
             var mapper = new ObjectMapper();
             var responseBodyBytes = mapper.writeValueAsBytes(response);

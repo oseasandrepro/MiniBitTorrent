@@ -12,9 +12,10 @@ import java.util.*;
 import java.net.Inet4Address;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.tinylog.Logger;
 import org.uerj.domain.tracker.PeerHost;
-import org.uerj.domain.tracker.TrackerJoinResponse;
+import org.uerj.domain.tracker.responses.TrackerJoinResponse;
 import org.uerj.utils.Torrent;
 
 import static org.uerj.utils.TorrentUtils.readTorrentFile;
@@ -29,6 +30,8 @@ public class Peer {
     private Torrent torrent;
     private int uploadPort;
     private int getBlocksPort;
+    private boolean firstRound = true;
+    private boolean canMakeOptmisticUnchok = false;
 
     public Peer(String torrentFilePath) {
 
@@ -51,17 +54,19 @@ public class Peer {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/join/"))
+                    .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(trackerIp + "|" +
                             this.peerServer.getUpLoadport() + "|" +
                             this.peerServer.getGetBlocksport()))
                     .build();
 
-            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-            ObjectInputStream ois = new ObjectInputStream(response.body());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            ObjectMapper mapper = new ObjectMapper();
 
             @SuppressWarnings("unchecked")
-            TrackerJoinResponse trackerJoinResponse = (TrackerJoinResponse) ois.readObject();
+            TrackerJoinResponse trackerJoinResponse = mapper.readValue(response.body(), TrackerJoinResponse.class);
 
             this.peerList = trackerJoinResponse.getAllPeersHosts();
             peerService.saveBlockListInDisk(trackerJoinResponse.getInitialFileBlocks());
@@ -72,9 +77,31 @@ public class Peer {
         } catch (IOException | RuntimeException | InterruptedException | URISyntaxException e) {
             Logger.error("Erro ao fazer requisição para o tracker. {}", e.getMessage());
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        }
+    }
+
+    public List<PeerHost> geetPeerListFromTracker() {
+        HttpClient client = HttpClient.newHttpClient();
+        List<PeerHost> peerHostList = null;
+        try {
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI("http://" + trackerIp + ":" + DEFAULT_TRACKER_HTTP_PORT + "/peer/"))
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            peerHostList = (List<PeerHost>) mapper.readValue(response.body(), List.class);
+
+        } catch (IOException | RuntimeException | InterruptedException | URISyntaxException e) {
             Logger.error("Erro ao fazer requisição para o tracker. {}", e.getMessage());
             e.printStackTrace();
+        } finally {
+            return peerHostList;
         }
     }
 
@@ -157,39 +184,54 @@ public class Peer {
     }
 
     public void start() throws InterruptedException {
+        Random rand = new Random();
         JoinInTorrentNetWork();
         Thread.sleep(5);
         Thread serverThread = new Thread(this.peerServer);
         serverThread.start();
 
-        Runnable peerRotine = () -> {
+        Runnable downLoadRoutine = () -> {
 
             List<String> rareBlocks = null;
 
             while (true) {
-
-                if (peerList.size() >= 5) {
+                //Rarest first if I can
+                if (firstRound && peerList.size() == 4) {
                     rareBlocks = getfourMostRareBlocks();
                     rareBlocks.stream().forEach(it -> {
                         downLoadBlock(it);
                     });
-
                     if (torrent.getBlocksToDownload().isEmpty())
                         break;
+
+                    firstRound = false;
+                    canMakeOptmisticUnchok = true;
+
                 } else {
-                    Random rand = new Random();
+
                     List<String> blockIds = torrent.getBlocksToDownload();
                     String blockId = blockIds.get(rand.nextInt(blockIds.size()));
                     downLoadBlock(blockId);
                     if (torrent.getBlocksToDownload().isEmpty())
                         break;
+
+                    //Add peers
+                    if (peerList.size() < 4) {
+                        List<PeerHost> list = geetPeerListFromTracker();
+                        if (list.size() > 1) {
+                            for (int i = 0; i < (4 - peerList.size()); i++) {
+                                PeerHost peerHost = list.get(rand.nextInt(list.size()));
+                                if (!peerList.contains(peerHost))
+                                    peerList.add(peerHost);
+                            }
+                        }
+                    }
                 }
             }
-
-            Logger.error("DownLoad completo. ");
+            Logger.info("DownLoad completo. ");
         };
-        Thread peerRotineThread = new Thread(peerRotine);
+        Thread peerRotineThread = new Thread(downLoadRoutine);
         peerRotineThread.start();
+        peerRotineThread.join();
     }
-
 }
