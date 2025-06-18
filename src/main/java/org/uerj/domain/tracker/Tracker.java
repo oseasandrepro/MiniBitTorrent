@@ -3,15 +3,20 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.tinylog.Logger;
+import org.uerj.domain.peer.Peer;
+import org.uerj.utils.FileUtils;
+
+import static org.uerj.Main.BLOCKS_DIRECTORY;
+import static org.uerj.utils.TorrentUtils.generateTorrentFile;
 
 public class Tracker implements HttpHandler {
     private String ipAddress;
-    private List<Peer> connectedPeersList;
     private HttpServer server;
     private final int DEFAULT_HTTP_PORT = 8000;
     private TrackerService trackerService;
@@ -22,7 +27,6 @@ public class Tracker implements HttpHandler {
             server = HttpServer.create(
                     new InetSocketAddress(this.ipAddress, DEFAULT_HTTP_PORT),10);
 
-            connectedPeersList = new ArrayList<>();
             trackerService = new TrackerService();
 
         }
@@ -36,29 +40,40 @@ public class Tracker implements HttpHandler {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        String resource = path.split("/")[1];
-        switch (method) {
-            case "GET":
-                if(resource.equals("join")) {
-                    var newPeer = trackerService.handleJoinRequest(exchange,
-                            this.connectedPeersList);
-                    connectedPeersList.add(newPeer);
-                }
-                break;
-            case "POST":
-
-                break;
-            default:
-                trackerService.sendPlainText(exchange, 405,
-                        "{\"error\": \"Método não permitido\"}");
+        try {
+            String resource = path.split("/")[1];
+            switch (method) {
+                case "GET":
+                    if(resource.equals("peers")) {
+                        trackerService.handleGetPeersRequest(exchange);
+                    }
+                    break;
+                case "POST":
+                    if(resource.equals("join")) {
+                        trackerService.handleJoinRequest(exchange);
+                    }
+                    break;
+                default:
+                    trackerService.sendPlainText(exchange, 405,
+                            "{\"error\": \"Método não permitido\"}");
+            }
+        }
+        catch(Exception exception) {
+            Logger.error("Erro ao executar o trackerService.", exception);
         }
     }
 
-    public void start()
+    public void start(String filePath)
     {
+        File file = new File(filePath);
+        FileUtils.splitFile(file, BLOCKS_DIRECTORY);
+        generateTorrentFile(file.getName(), BLOCKS_DIRECTORY);
+
         server.createContext("/join", this);
+        server.createContext("/peers", this);
         server.setExecutor(null);
         server.start();
+
         Logger.info("Tracker escutando requisições http na porta {}", DEFAULT_HTTP_PORT);
     }
 
