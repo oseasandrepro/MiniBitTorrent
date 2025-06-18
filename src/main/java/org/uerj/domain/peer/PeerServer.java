@@ -36,11 +36,9 @@ public class PeerServer implements Runnable {
     public void run() {
 
         Runnable task1 = () -> {
-
+            Logger.debug("Peer escutando!. fornecendo lista de blocos na porta {}", getBlocksport);
             try {
                 while (true) {
-
-                    Logger.debug("Peer escutando!. fornecendo lista de blocos na porta {}", getBlocksport);
                     Socket clientSocket = getBlocksSocket.accept();
                     List<String> blocks = torrent.getDownLoadedBlocks();
                     String message = String.join("|", blocks);
