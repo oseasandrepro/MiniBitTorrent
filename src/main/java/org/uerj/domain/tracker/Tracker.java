@@ -11,17 +11,19 @@ import org.tinylog.Logger;
 
 public class Tracker implements HttpHandler {
     private String ipAddress;
+    private String blocksDirectoryPath;
     private HttpServer server;
     private final int DEFAULT_HTTP_PORT = 8000;
     private TrackerService trackerService;
 
-    public Tracker(String ipAddress){
+    public Tracker(String ipAddress, String blocksDirectoryPath){
         try {
             this.ipAddress = ipAddress;
+            this.blocksDirectoryPath = blocksDirectoryPath;
             server = HttpServer.create(
                     new InetSocketAddress(this.ipAddress, DEFAULT_HTTP_PORT),10);
 
-            trackerService = new TrackerService();
+            trackerService = new TrackerService(blocksDirectoryPath);
 
         }
         catch (Exception exception) {
