@@ -2,6 +2,7 @@ package org.uerj;
 
 import org.tinylog.Logger;
 
+import org.uerj.domain.tracker.Tracker;
 import org.uerj.utils.FileUtils;
 
 import java.io.File;
@@ -21,8 +22,8 @@ import static org.uerj.utils.TorrentUtils.generateTorrentFile;
 public class Main {
     //public static String processId = UUID.randomUUID().toString();
     public static String processId = "8f297ec3-4733-4477-a943-ab749bf57632";
-    public static final String BLOCKS_DIRECTORY = ".//"+Main.processId+"//downloaded_blocks//";
-    public static final String OUT_DIRECTORY = ".//"+ Main.processId+"//downloaded_files//";
+    public static final String BLOCKS_DIRECTORY = ".\\"+Main.processId+"\\downloaded_blocks\\";
+    public static final String OUT_DIRECTORY = ".\\"+ Main.processId+"\\downloaded_files\\";
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -46,12 +47,15 @@ public class Main {
             e.printStackTrace();
         }
 
+        //FileUtils.splitFile(new File(OUT_DIRECTORY+"\\file_example_MP3_700KB.mp3"), BLOCKS_DIRECTORY);
 
-        /*
-        Tracker tracker = new Tracker("127.0.0.1");
+        //FileUtils.joinFilesFromDirectory("resultado.mp3",BLOCKS_DIRECTORY, OUT_DIRECTORY);
+
+
+        Tracker tracker = new Tracker("192.168.0.51");
         tracker.start();
-         */
 
+        Thread.sleep(5000);
 
         Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
         peer.start();
