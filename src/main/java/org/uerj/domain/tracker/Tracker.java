@@ -17,19 +17,17 @@ import static org.uerj.utils.TorrentUtils.generateTorrentFile;
 
 public class Tracker implements HttpHandler {
     private String ipAddress;
-    private String blocksDirectoryPath;
     private HttpServer server;
     private final int DEFAULT_HTTP_PORT = 8000;
     private TrackerService trackerService;
 
-    public Tracker(String ipAddress, String blocksDirectoryPath){
+    public Tracker(String ipAddress){
         try {
             this.ipAddress = ipAddress;
-            this.blocksDirectoryPath = blocksDirectoryPath;
             server = HttpServer.create(
                     new InetSocketAddress(this.ipAddress, DEFAULT_HTTP_PORT),10);
 
-            trackerService = new TrackerService(blocksDirectoryPath);
+            trackerService = new TrackerService();
 
         }
         catch (Exception exception) {
@@ -71,19 +69,12 @@ public class Tracker implements HttpHandler {
         FileUtils.splitFile(file, BLOCKS_DIRECTORY);
         generateTorrentFile(file.getName(), BLOCKS_DIRECTORY);
 
-        //cria os diretorios de download blocks e files
-        //acessa o arquivo
-        //quebra o arquivo em blocos
-        //salva os blocos e arquivo completo no diretorio
-        //gera arquivo torrent
-        //inicia o peer do proprio tracker (e o adiciona na lista de peerhost da rede)
-
         server.createContext("/join", this);
         server.createContext("/peers", this);
         server.setExecutor(null);
         server.start();
-        Logger.info("Tracker escutando requisições http na porta {}", DEFAULT_HTTP_PORT);
 
+        Logger.info("Tracker escutando requisições http na porta {}", DEFAULT_HTTP_PORT);
     }
 
 }

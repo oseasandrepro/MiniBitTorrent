@@ -4,20 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import org.tinylog.Logger;
 import org.uerj.domain.tracker.responses.TrackerJoinResponse;
-import org.uerj.utils.Block;
+import org.uerj.utils.BlockUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
+
+import static org.uerj.Main.BLOCKS_DIRECTORY;
 
 public class TrackerService {
 
-    public static final CopyOnWriteArrayList<PeerHost> connectedPeersHosts = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<PeerHost> connectedPeersHosts = new CopyOnWriteArrayList<>();
 
     public void sendPlainText(HttpExchange exchange, int statusCode, String response) {
         try
@@ -66,8 +65,9 @@ public class TrackerService {
             int statusCode = 200;
 
             var response = new TrackerJoinResponse();
+            var fileBlocks = BlockUtils.getAllFilesBlocksInDirectory(BLOCKS_DIRECTORY);
+            response.initialBlocks = BlockUtils.selectRandomThird(fileBlocks);
             response.allPeersHosts = new ArrayList<PeerHost>(connectedPeersHosts);
-            response.initialBlocks = new ArrayList<Block>();
 
             var mapper = new ObjectMapper();
             var responseBodyBytes = mapper.writeValueAsBytes(response);

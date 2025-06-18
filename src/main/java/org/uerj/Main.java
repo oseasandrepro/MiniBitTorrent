@@ -3,27 +3,18 @@ package org.uerj;
 import org.tinylog.Logger;
 
 import org.uerj.domain.tracker.Tracker;
-import org.uerj.utils.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-
-import org.uerj.domain.peer.Peer;
-import org.uerj.domain.peer.PeerServer;
-import org.uerj.domain.peer.PeerClient;
-
-import java.util.List;
 import java.util.UUID;
 
-import static org.uerj.utils.FileUtils.splitFile;
-import static org.uerj.utils.TorrentUtils.generateTorrentFile;
+import org.uerj.domain.peer.Peer;
 
 public class Main {
-    //public static String processId = UUID.randomUUID().toString();
-    public static String processId = "8f297ec3-4733-4477-a943-ab749bf57632";
+    public static String processId = UUID.randomUUID().toString();
     public static final String BLOCKS_DIRECTORY = ".\\"+Main.processId+"\\downloaded_blocks\\";
     public static final String OUT_DIRECTORY = ".\\"+ Main.processId+"\\downloaded_files\\";
 

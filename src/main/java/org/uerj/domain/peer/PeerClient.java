@@ -16,7 +16,6 @@ public class PeerClient implements Runnable {
     private UUID uuid;
     private List<String> ipAddresses;
 
-    private final int PORT = 4444;
     private final int TIMEOUT_MS = 10000; // 10.000ms = 10s
 
     public final HashMap<String, Block> blocksByID = new HashMap<>();
@@ -33,7 +32,7 @@ public class PeerClient implements Runnable {
             for (String ip : ipAddresses) {
                 executor.submit(() -> {
                     try {
-                        Socket socket = new Socket(ip, PORT);
+                        Socket socket = new Socket(ip, 0);
                         Logger.info("Tentando se conectar ao endereço: " + ip);
                         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                              OutputStream out = socket.getOutputStream()) {

@@ -22,8 +22,8 @@ public class PeerServer implements Runnable {
         this.torrent = torrent;
         this.peerService = new PeerService();
         try {
-            upLoadSocket = new ServerSocket(58514);
-            getBlocksSocket = new ServerSocket(56599);
+            upLoadSocket = new ServerSocket(0);
+            getBlocksSocket = new ServerSocket(0);
         } catch (Exception e) {
             Logger.error("Erro ao criar socketServer. {}", e.getMessage());
             e.printStackTrace();
