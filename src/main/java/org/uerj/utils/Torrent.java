@@ -1,5 +1,6 @@
 package org.uerj.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Torrent {
@@ -13,8 +14,10 @@ public class Torrent {
         this.trackerIp = trackerIp;
         this.Filename = filename;
         this.numBlocks = numBlocks;
-        this.blocksToDownload =blocks;
+        this.blocksToDownload = blocks;
+        downloadedBlocks = new ArrayList<String>();
     }
+
 
     public int getNumBlocks() {
         return numBlocks;
@@ -30,7 +33,7 @@ public class Torrent {
 
     public synchronized  void addDownLoadedBlock(String blockId) {
         this.downloadedBlocks.add(blockId);
-        this.downloadedBlocks.remove(blockId);
+        this.blocksToDownload.remove(blockId);
     }
 
     public synchronized List<String> getDownLoadedBlocks(){

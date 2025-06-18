@@ -7,6 +7,8 @@ import org.uerj.utils.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 
 import org.uerj.domain.peer.Peer;
@@ -25,7 +27,7 @@ public class Main {
     public static final String BLOCKS_DIRECTORY = ".\\"+Main.processId+"\\downloaded_blocks\\";
     public static final String OUT_DIRECTORY = ".\\"+ Main.processId+"\\downloaded_files\\";
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, UnknownHostException {
 
 
         Logger.info("MiniBitTorrent iniciado Id do processo: {}", Main.processId);
@@ -52,13 +54,25 @@ public class Main {
         //FileUtils.joinFilesFromDirectory("resultado.mp3",BLOCKS_DIRECTORY, OUT_DIRECTORY);
 
 
-        Tracker tracker = new Tracker("192.168.0.51");
-        tracker.start();
+        if( args.length == 1 )
+        {
+            String trackerIp = Inet4Address.getLocalHost().getHostAddress();
+            String filePath = args[0];
 
-        Thread.sleep(5000);
+            Tracker tracker = new Tracker(trackerIp);
+            tracker.start(filePath);
+            Thread.sleep(5000);
 
-        Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
-        peer.start();
+            File file = new File(filePath);
+            Peer peer = new Peer(file.getName().replaceFirst("[.][^.]+$", "")+".torrent",
+                    true);
+            peer.start();
+
+        }
+
+
+        //Peer peer = new Peer("C:\\Users\\oseas\\OneDrive\\Documentos\\Sistemas-distribuidos\\MiniBit\\fakeTorrentFile.torrent");
+        //peer.start();
 
 
         /*Runnable peerServer = new PeerServer(UUID.randomUUID());

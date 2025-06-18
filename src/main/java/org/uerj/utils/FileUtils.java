@@ -18,7 +18,7 @@ public class FileUtils {
 
     public static final int BLOCK_SIZE = 256 * 1024; // 256 bytes * 1024 = 256 KB
 
-    public static void splitFile(File file, String outputDirectory)  {
+    public static void splitFile(File file, String outputDirectory) {
         int indexCount = 0;
         try (InputStream in = Files.newInputStream(file.toPath())) {
             final byte[] buffer = new byte[BLOCK_SIZE];
@@ -50,12 +50,14 @@ public class FileUtils {
 
     private static void generateFileBlock(byte[] buffer, int length, int index, String outputDirectory) throws IOException {
         //
-        try{
+        try {
             String fileBlockDigest = generateMessageDigest(buffer);
-            File outFile = Files.createFile(
-                    Paths.get(outputDirectory+"\\"+index + "-" + fileBlockDigest)).toFile();
-            FileOutputStream fileOutputStream = new FileOutputStream(outFile);
-            fileOutputStream.write(buffer);
+            Path path = Paths.get(outputDirectory + "\\" + index + "-" + fileBlockDigest);
+            if (!Files.exists(path)) {
+                File outFile = Files.createFile(path).toFile();
+                FileOutputStream fileOutputStream = new FileOutputStream(outFile);
+                fileOutputStream.write(buffer);
+            }
 
         } catch (NoSuchAlgorithmException ex) {
             Logger.error("O algoritmo selecionado de encriptação não existe.", ex);
@@ -73,9 +75,9 @@ public class FileUtils {
                 .sorted(File::compareTo)
                 .map(block -> {
                     try {
-                       return Files.readAllBytes(Paths.get(block.getAbsolutePath()));
+                        return Files.readAllBytes(Paths.get(block.getAbsolutePath()));
                     } catch (IOException ex) {
-                       Logger.error("Não foi possivel ler os blocks do arquivo.", ex);
+                        Logger.error("Não foi possivel ler os blocks do arquivo.", ex);
                     }
                     return null;
                 })
