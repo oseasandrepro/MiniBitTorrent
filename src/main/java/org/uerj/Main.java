@@ -28,8 +28,8 @@ public class Main {
         String logFileName = processId + "/" + processId + ".log";
 
         // Set the file name before the logger starts
-        Configuration.set("writer", "file");
-        Configuration.set("writer.file", logFileName);
+        //Configuration.set("writer", "file");
+        //Configuration.set("writer.file", logFileName);
 
         Logger.info("MiniBitTorrent iniciado Id do processo: {}", Main.processId);
         File downloadedBlocks = new File(BLOCKS_DIRECTORY);

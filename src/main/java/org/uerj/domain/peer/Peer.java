@@ -133,19 +133,15 @@ public class Peer {
 
   private List<String> getBlockListFromPeer(PeerHost peerHost) {
     List<String> blocks = null;
-    try {
-      Socket socket = new Socket(peerHost.getIpAddress(), peerHost.getGetBlocksIdsPort(), true);
-      InputStream in = socket.getInputStream();
+      try (Socket socket = new Socket(peerHost.getIpAddress(), peerHost.getGetBlocksIdsPort())) {
+          String response = new BufferedReader(
+                  new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
+                  .lines()
+                  .collect(Collectors.joining());
 
-      byte[] buffer = new byte[256 * 1024];
-      int bytesRead = in.read(buffer);
-
-      if (bytesRead != -1) {
-        String response = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
-        blocks = Arrays.asList(response.split("\\|"));
-      }
-
-    } catch (Exception e) {
+          blocks = Arrays.stream(response.split("\\|"))
+                  .collect(Collectors.toList());
+      }catch (Exception e) {
       Logger.error("Erro ao solicitar lista de blocos. {}", e.getMessage());
       e.printStackTrace();
     } finally {
